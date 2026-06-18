@@ -8,11 +8,11 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy requirements and install
-COPY backend/requirements.txt ./requirements.txt
+COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy application code
-COPY backend /app
+COPY . /app
 
 ENV PYTHONUNBUFFERED=1
 EXPOSE 8000
