@@ -1,0 +1,43 @@
+# ─── Python / FastAPI backend ───────────────────────────────
+venv/
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+
+# Pytest
+.pytest_cache/
+.pytest_tmp/
+
+# ─── Node / Next.js frontend ────────────────────────────────
+node_modules/
+.next/
+out/
+build/
+*.tsbuildinfo
+next-env.d.ts
+
+# ─── Secrets & environment ──────────────────────────────────
+.env
+.env.*
+!.env.example
+*.local
+
+# Local agent/editor config (may contain API keys)
+.claude/
+.vscode/
+.idea/
+
+# ─── Databases (use a real DB; never commit local SQLite) ───
+*.db
+*.sqlite
+*.sqlite3
+
+# ─── Generated artifacts & user uploads ─────────────────────
+uploads/
+exports/
+
+# ─── OS files ───────────────────────────────────────────────
+.DS_Store
+Thumbs.db
