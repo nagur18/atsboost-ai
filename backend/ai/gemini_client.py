@@ -4,15 +4,15 @@ import re
 from types import SimpleNamespace
 
 from dotenv import load_dotenv
-from google import genai
+import google.generativeai as genai
 
 load_dotenv()
 
 
 class GeminiModelAdapter:
-    def __init__(self, model_name: str = "gemini-2.5-flash"):
+    def __init__(self, model_name: str = "gemini-1.5-flash"):
         self.model_name = model_name
-        self._client = None
+        self._model = None
 
     def _fallback_payload(self, prompt: str) -> str:
         prompt_lower = prompt.lower()
@@ -28,20 +28,22 @@ class GeminiModelAdapter:
                     "Tell me about your experience with the main technologies in your resume.",
                     "Describe a challenging project you worked on and how you solved it."
                 ],
-                "note": "AI service is currently unavailable due to quota limits; these are fallback interview prompts."
+                "note": "AI service is currently unavailable. Using fallback interview questions."
             })
 
         if "feedback" in prompt_lower or "answer" in prompt_lower:
             return json.dumps({
                 "score": 0,
-                "feedback": "AI feedback is temporarily unavailable because the Gemini quota has been reached. Please try again later.",
+                "feedback": "AI feedback is temporarily unavailable.",
                 "strengths": [],
-                "improvements": ["Retry when the AI service is available."]
+                "improvements": [
+                    "Retry when Gemini service becomes available."
+                ]
             })
 
         return json.dumps({
             "status": "fallback",
-            "message": "AI service is temporarily unavailable. Please try again later."
+            "message": "AI service unavailable."
         })
 
     def _fallback_resume_analysis(self, prompt: str) -> dict:
@@ -60,12 +62,14 @@ class GeminiModelAdapter:
             r"[\w\.-]+@[\w\.-]+",
             resume_text
         )
+
         phone_match = re.search(
-            r"\+?\d[\d\s-]{8,}",
+            r"\+?\d[\d\s\-]{8,}",
             resume_text
         )
 
         skills = []
+
         for index, line in enumerate(lines):
             if line.lower().startswith("skills"):
                 skills = [
@@ -85,30 +89,64 @@ class GeminiModelAdapter:
             "Education": [],
             "Experience": [],
             "Projects": [],
-            "note": "AI service is currently unavailable; this is fallback resume parsing."
         }
 
-    def _get_client(self):
-        if self._client is None:
-            api_key = os.getenv("GEMINI_API_KEY")
+    def _get_model(self):
+        if self._model is None:
+
+            api_key = os.getenv(
+                "GEMINI_API_KEY"
+            )
+
             if not api_key:
                 raise RuntimeError(
-                    "GEMINI_API_KEY is not configured. Set it in the backend .env file before calling AI endpoints."
+                    "GEMINI_API_KEY not configured"
                 )
-            self._client = genai.Client(api_key=api_key)
-        return self._client
 
-    def generate_content(self, prompt: str):
-        try:
-            response = self._get_client().models.generate_content(
-                model=self.model_name,
-                contents=prompt,
+            genai.configure(
+                api_key=api_key
             )
-            text = getattr(response, "text", str(response))
-        except Exception:
-            text = self._fallback_payload(prompt)
 
-        return SimpleNamespace(text=text)
+            self._model = genai.GenerativeModel(
+                self.model_name
+            )
+
+        return self._model
+
+    def generate_content(
+        self,
+        prompt: str
+    ):
+
+        try:
+
+            response = (
+                self._get_model()
+                .generate_content(
+                    prompt
+                )
+            )
+
+            text = (
+                response.text
+                if hasattr(
+                    response,
+                    "text"
+                )
+                else str(response)
+            )
+
+        except Exception:
+
+            text = (
+                self._fallback_payload(
+                    prompt
+                )
+            )
+
+        return SimpleNamespace(
+            text=text
+        )
 
 
 model = GeminiModelAdapter()
