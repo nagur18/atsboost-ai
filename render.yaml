@@ -1,0 +1,28 @@
+# Render Blueprint — deploys the FastAPI backend on Render's free tier.
+# This file must live at the repo root. In Render: New → Blueprint → pick this repo.
+# Secret values (sync: false) are entered in the Render dashboard, never committed.
+services:
+  - type: web
+    name: atsboost-backend
+    runtime: python
+    rootDir: backend
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /docs
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.13.4"
+      # Railway MySQL connection string (mysql://user:pass@host:port/db)
+      - key: DATABASE_URL
+        sync: false
+      # Comma-separated frontend origin(s) for CORS, e.g. https://your-app.vercel.app
+      - key: ALLOWED_ORIGINS
+        sync: false
+      # Provide ONE AI key (Gemini or OpenRouter). OpenRouter has free models.
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: OPENROUTER_API_KEY
+        sync: false
+      - key: OPENROUTER_MODEL
+        value: google/gemini-2.0-flash-exp:free
